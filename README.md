@@ -1,5 +1,5 @@
-<!-- ====================== HEADER BANNER ====================== -->
-<img src="https://capsule-render.vercel.app/api?type=waving&amp;color=0:8B5CF6,50:6366F1,100:06B6D4&amp;height=160&amp;section=header&amp;text=Hi%20%F0%9F%91%8B%20I'm%20Sahil&amp;fontSize=46&amp;fontColor=ffffff&amp;animation=fadeIn&amp;fontAlignY=36&amp;desc=Full%20Stack%20AI%20Developer%20%E2%9A%A1%20Agents%20%26%20Automations&amp;descAlignY=56&amp;descSize=16" width="100%"/>
+<!-- ====================== HEADER BANNER (animated F1 SVG, XML-safe) ====================== -->
+<img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663433381478/KGYGhFQtyzEEcNwv.svg" width="100%" alt="Hi, I'm Sahil - Full Stack AI Developer"/>
 
 <!-- ====================== TYPING + BADGES ====================== -->
 <div align="center">
@@ -71,8 +71,8 @@ class Sahil:
   <img src="https://raw.githubusercontent.com/platane/snk/output/github-contribution-grid-snake-dark.svg" width="95%" alt="snake animation"/>
 </div>
 
-<!-- ====================== FOOTER ====================== -->
-<img src="https://capsule-render.vercel.app/api?type=waving&amp;color=0:06B6D4,50:6366F1,100:8B5CF6&amp;height=90&amp;section=footer" width="100%"/>
+<!-- ====================== FOOTER (PNG, XML-safe) ====================== -->
+<img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663433381478/yQDbGMFJrPtqsheY.png" width="100%" alt="footer wave"/>
 
 <div align="center">
   <b>⭐ Thanks for visiting! — <a href="https://github.com/sahil-msi">@sahil-msi</a></b>
