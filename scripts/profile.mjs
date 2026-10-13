@@ -13,7 +13,7 @@ export const PROFILE = {
 	/** The two lines under "Hi, I'm …" on the stage. */
 	lines: ['Full-Stack & AI Engineer · India', 'TypeScript · React · Next.js · AI agents'],
 	/** What the rabbit says before he snaps. */
-	quip: 'Hold my carrot.',
+	quip: 'I am... inevitable.',
 	/** Number and date formatting on the charts. */
 	locale: 'en-IN',
 	languagesLabel: 'Languages across the repos I work on',

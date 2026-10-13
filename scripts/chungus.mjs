@@ -109,7 +109,10 @@ export function stageSvg(theme) {
 		.map((f, i) => `<image class="f f${i}" href="${f.href}" x="${fx}" y="${fy}" width="${fw}" height="${fh}"/>`)
 		.join('\n');
 
-	const bubble = { w: 176, h: 40, x: head.x - 262, y: head.y - 34 };
+	// Sized to the line (bold 15px averages about 8.6px a character), with its
+	// tail just left of his face.
+	const bw = Math.max(150, Math.round(PROFILE.quip.length * 8.6 + 34));
+	const bubble = { w: bw, h: 40, x: head.x - 86 - bw, y: head.y - 34 };
 	const style = [
 		`.f,.walker,.bubble,.snap,.flash,.caption{animation-duration:${BEAT.end}s;animation-fill-mode:forwards;animation-timing-function:step-end}`,
 		'.f{opacity:0}',
