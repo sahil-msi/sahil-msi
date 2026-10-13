@@ -1,0 +1,53 @@
+name: Profile graphics
+
+# Renders the README's images (the rabbit's stage, one image per row of
+# cards, the activity graph and the overview card) and publishes them to the
+# `output` branch. Each run snaps a different half of the cards. Nothing here
+# depends on a hosted image service or a third-party action, and the only
+# token used is the workflow's own GITHUB_TOKEN.
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/**
+      - assets/**
+      - .github/workflows/profile.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: profile-graphics
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Stage, card rows, activity graph and overview
+        run: node scripts/generate.mjs "$GITHUB_REPOSITORY_OWNER" dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to the output branch
+        working-directory: dist
+        run: |
+          git init -q -b output
+          git add -A
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -q -m "Profile graphics for ${GITHUB_SHA::7}"
+          git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" output
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

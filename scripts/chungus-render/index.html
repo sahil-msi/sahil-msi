@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Chungus frames</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+</head>
+<body style="margin:0;background:transparent">
+<script type="module">
+// Poses the rabbit from chungus-model.js and renders one transparent frame
+// per call to window.pose(). frames.mjs drives this page in a headless browser.
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { buildChungus } from './chungus-model.js';
+
+const W = 350;
+const H = 400;
+
+const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(2);
+renderer.setSize(W, H);
+renderer.setClearColor(0x000000, 0);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.append(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.03).texture;
+scene.environmentIntensity = 0.85;
+scene.add(new THREE.HemisphereLight(0xe4ebff, 0x403828, 0.75));
+const key = new THREE.DirectionalLight(0xfff1dc, 2.3);
+key.position.set(3.5, 7.5, 5.5);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+key.shadow.radius = 4;
+Object.assign(key.shadow.camera, { left: -5, right: 5, top: 7, bottom: -2, near: 0.5, far: 25 });
+scene.add(key);
+const rim = new THREE.DirectionalLight(0xcfe0ff, 0.6);
+rim.position.set(-5, 4, -4);
+scene.add(rim);
+
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({ opacity: 0.2 }));
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+const rabbit = buildChungus();
+scene.add(rabbit.root);
+
+const camera = new THREE.PerspectiveCamera(28, W / H, 0.1, 100);
+camera.position.set(0, 2.9, 13.4);
+camera.lookAt(0, 2.3, 0);
+
+const v = (x, y, z) => new THREE.Vector3(x, y, z);
+
+/** The rotation that points an arm's -y along `reach` and turns its +z (the back of the hand) towards `back`. */
+function aim(reach, back) {
+	const y = reach.clone().normalize().negate();
+	const z = back.clone().sub(y.clone().multiplyScalar(back.dot(y))).normalize();
+	const x = new THREE.Vector3().crossVectors(y, z);
+	return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
+}
+
+// The gauntlet arm carries the fist forward at hip height, then lifts it
+// beside the head with the stones towards the camera.
+const LEFT_REST = aim(v(0.2, -0.78, 0.62), v(0.75, 0.25, 0.6));
+const LEFT_UP = aim(v(0.16, 1, 0.3), v(0.05, -0.15, 1));
+const RIGHT_REST = aim(v(-0.45, -1, 0.3), v(-1, 0, 0.3));
+
+// Curl per finger joint (index to little, knuckle to tip), then the thumb:
+// [swing across the palm, swing towards the palm, curl near, curl tip].
+const HANDS = {
+	fist: { fingers: [[1.55, 1.5, 1], [1.55, 1.5, 1], [1.55, 1.5, 1], [1.55, 1.5, 1]], thumb: [0.6, -0.6, 0.5, 0.5] },
+	ready: { fingers: [[0.15, 0.1, 0.05], [0.9, 0.85, 0.45], [1.55, 1.5, 1], [1.55, 1.5, 1]], thumb: [0.1, -0.75, 0.2, 0.3] },
+	press: { fingers: [[0.15, 0.1, 0.05], [1.05, 0.95, 0.55], [1.55, 1.5, 1], [1.55, 1.5, 1]], thumb: [0.25, -0.9, 0.3, 0.4] },
+	snapped: { fingers: [[0.1, 0.05, 0], [1.7, 1.6, 1.1], [1.55, 1.5, 1], [1.55, 1.5, 1]], thumb: [-0.32, -0.2, 0.05, 0.05] },
+};
+
+const lerp = THREE.MathUtils.lerp;
+
+function shape(from, to, t) {
+	const a = HANDS[from];
+	const b = HANDS[to];
+	rabbit.gauntlet.fingers.forEach((joints, i) =>
+		joints.forEach((joint, k) => (joint.rotation.x = -lerp(a.fingers[i][k], b.fingers[i][k], t))),
+	);
+	const [root, near, tip] = rabbit.gauntlet.thumb;
+	const th = a.thumb.map((x, k) => lerp(x, b.thumb[k], t));
+	root.rotation.set(th[1], 0, th[0]);
+	near.rotation.x = -th[2];
+	tip.rotation.x = -th[3];
+}
+
+/**
+ * Pose and render one frame; returns a WebP data URL.
+ * facing: 0 walking left in profile, 1 facing the camera.
+ * step: walk phase in radians, or null when standing.
+ * lift: 0 gauntlet at rest, 1 raised beside the head.
+ */
+window.pose = ({ facing = 0, step = null, lift = 0, from = 'fist', to = 'fist', t = 1, glow = 0, flick = 0, flop = 0.25 }) => {
+	rabbit.root.rotation.y = (-Math.PI / 2) * (1 - facing);
+
+	const stride = step === null ? 0 : Math.sin(step);
+	rabbit.figure.rotation.z = stride * 0.06;
+	rabbit.figure.position.y = step === null ? 0 : Math.abs(stride) * 0.15;
+	rabbit.feet[0].position.y = 0.14 + Math.max(0, stride) * 0.24;
+	rabbit.feet[1].position.y = 0.14 + Math.max(0, -stride) * 0.24;
+	rabbit.feet[0].position.z = 0.52 + stride * 0.18;
+	rabbit.feet[1].position.z = 0.52 - stride * 0.18;
+
+	rabbit.ears[0].tip.rotation.x = flop + stride * 0.12;
+	rabbit.ears[1].tip.rotation.x = 0.05 - stride * 0.08;
+
+	rabbit.right.shoulder.quaternion.copy(RIGHT_REST);
+	rabbit.right.shoulder.rotateX(stride * 0.3);
+
+	rabbit.left.shoulder.quaternion.slerpQuaternions(LEFT_REST, LEFT_UP, lift);
+	if (lift === 0) rabbit.left.shoulder.rotateX(-stride * 0.18);
+	rabbit.left.wrist.rotation.set(flick, 0, 0);
+	rabbit.left.wrist.scale.setScalar(1.6);
+
+	shape(from, to, t);
+	for (const s of rabbit.gauntlet.stones) s.emissiveIntensity = 0.3 + glow * 2;
+	rabbit.gauntlet.light.intensity = glow * 7;
+	rabbit.gauntlet.halo.material.opacity = Math.min(1, glow * 0.55);
+	rabbit.gauntlet.halo.scale.setScalar(1.1 + glow * 0.7);
+
+	renderer.render(scene, camera);
+	return renderer.domElement.toDataURL('image/webp', 0.8);
+};
+
+window.ready = true;
+</script>
+</body>
+</html>
